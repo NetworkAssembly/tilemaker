@@ -5,7 +5,7 @@
 
 `process-openmaptiles.lua`
 
-- delete: housenumber, poi
+- delete: housenumber, poi, rank
 - modify: "-- Remap coastlines" and remove "featurecla" stuff
 
 ```zsh

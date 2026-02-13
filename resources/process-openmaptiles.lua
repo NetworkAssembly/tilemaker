@@ -67,58 +67,6 @@ function capitalLevel(capital)
         return capital_al
 end
 
--- Calculate rank for place nodes
--- place: value of place=*
--- popuplation: population as number
--- capital_al: result of capitalLevel()
-function calcRank(place, population, capital_al)
-	local rank = 0
-	if capital_al and capital_al >= 2 and capital_al <= 4 then
-		rank = capital_al
-		if population > 3 * 10^6 then
-			rank = rank - 2
-		elseif population > 1 * 10^6 then
-			rank = rank - 1
-		elseif population < 100000 then
-			rank = rank + 2
-		elseif population < 50000 then
-			rank = rank + 3
-		end
-		-- Safety measure to avoid place=village/farm/... appear early (as important capital) because a mapper added capital=yes/2/3/4
-		if place ~= "city" then
-			rank = rank + 3
-			-- Decrease rank further if it is not even a town.
-			if place ~= "town" then
-				rank = rank + 2
-			end
-		end
-		return rank
-	end
-	if place ~= "city" and place ~= "town" then
-		return nil
-        end
-	if population > 3 * 10^6 then
-		return 1
-	elseif population > 1 * 10^6 then
-		return 2
-	elseif population > 500000 then
-		return 3
-	elseif population > 200000 then
-		return 4
-	elseif population > 100000 then
-		return 5
-	elseif population > 75000 then
-		return 6
-	elseif population > 50000 then
-		return 7
-	elseif population > 25000 then
-		return 8
-	elseif population > 10000 then
-		return 9
-	end
-	return 10
-end
-
 
 function node_function()
 	-- Write 'aerodrome_label'
@@ -137,20 +85,17 @@ function node_function()
 	end
 
 	-- Write 'place'
-	-- note that OpenMapTiles has a rank for countries (1-3), states (1-6) and cities (1-10+);
-	--   we could potentially approximate it for cities based on the population tag
 	local place = Find("place")
 	if place ~= "" then
 		local mz = 13
 		local pop = tonumber(Find("population")) or 0
 		local capital = capitalLevel(Find("capital"))
-		local rank = calcRank(place, pop, capital)
 
 		if     place == "continent"     then mz=0
 		elseif place == "country"       then
-			if     pop>50000000 then rank=1; mz=1
-			elseif pop>20000000 then rank=2; mz=2
-			else                     rank=3; mz=3 end
+			if     pop>50000000 then mz=1
+			elseif pop>20000000 then mz=2
+			else                     mz=3 end
 		elseif place == "state"         then mz=4
 		elseif place == "province"         then mz=5
 		elseif place == "city"          then mz=5
@@ -171,7 +116,6 @@ function node_function()
 		Layer("place", false)
 		Attribute("class", place)
 		MinZoom(mz)
-		if rank then AttributeInteger("rank", rank) end
 		if capital then AttributeInteger("capital", capital) end
 		if place=="country" then
 			local iso_a2 = Find("ISO3166-1:alpha2")
@@ -193,7 +137,6 @@ function node_function()
 	if natural == "peak" or natural == "volcano" then
 		Layer("mountain_peak", false)
 		SetEleAttributes()
-		AttributeInteger("rank", 1)
 		Attribute("class", natural)
 		SetNameAttributes()
 		return
@@ -332,10 +275,6 @@ function way_function()
 		LayerAsCentroid("place")
 		Attribute("class", place)
 		MinZoom(10)
-		local pop = tonumber(Find("population")) or 0
-		local capital = capitalLevel(Find("capital"))
-		local rank = calcRank(place, pop, nil)
-		if rank then AttributeInteger("rank", rank) end
 		SetNameAttributes()
 	end
 
